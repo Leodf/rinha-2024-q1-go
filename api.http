@@ -1,0 +1,36 @@
+@port=9999
+
+POST http://localhost:{{port}}/reset-db
+
+###
+GET http://localhost:{{port}}/clientes/1/extrato
+
+###
+POST http://localhost:{{port}}/clientes/1/transacoes
+Content-Type: application/json
+
+{
+  "valor": 1.2,
+  "tipo": "d",
+  "descricao" : "descrição"
+}
+
+###
+POST http://localhost:{{port}}/clientes/1/transacoes
+Content-Type: application/json
+
+{
+  "valor": 1000,
+  "tipo": "d",
+  "descricao" : "descrição"
+}
+
+###
+POST http://localhost:{{port}}/clientes/1/transacoes
+Content-Type: application/json
+
+{
+  "valor": 10101,
+  "tipo": "c",
+  "descricao" : "pix"
+}
