@@ -1,15 +1,14 @@
 version: "3.5"
 services:
   api01: &api
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: final
+    image: leodf41/rinha-2024q1-crebito:vtest
     ports:
       - "8081:3000"
     hostname: api01
     environment:
       - DB_HOST=db
+      - DB_POOL_MAX=1
+      - DB_POOL_MIN=1
     depends_on:
       db:
         condition: service_healthy

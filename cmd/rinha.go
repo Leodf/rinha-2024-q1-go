@@ -5,8 +5,8 @@ import (
 
 	"github.com/Leodf/leodf-go/internal/controller"
 	"github.com/Leodf/leodf-go/internal/db"
+	"github.com/bytedance/sonic"
 
-	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 )
@@ -19,8 +19,8 @@ func main() {
 	defer db.Close()
 
 	app := fiber.New(fiber.Config{
-		JSONEncoder: json.Marshal,
-		JSONDecoder: json.Unmarshal,
+		JSONEncoder: sonic.Marshal,
+		JSONDecoder: sonic.Unmarshal,
 	})
 	app.Use(recover.New(recover.Config{
 		EnableStackTrace: true,

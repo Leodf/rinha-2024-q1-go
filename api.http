@@ -20,7 +20,7 @@ POST http://localhost:{{port}}/clientes/1/transacoes
 Content-Type: application/json
 
 {
-  "valor": 1000,
+  "valor": 9303,
   "tipo": "d",
   "descricao" : "descrição"
 }
@@ -30,7 +30,7 @@ POST http://localhost:{{port}}/clientes/1/transacoes
 Content-Type: application/json
 
 {
-  "valor": 10101,
+  "valor": 10103,
   "tipo": "c",
   "descricao" : "pix"
 }

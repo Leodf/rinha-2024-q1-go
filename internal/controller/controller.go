@@ -9,6 +9,7 @@ import (
 )
 
 func PostTransaction(c *fiber.Ctx) error {
+	ctx := c.Context()
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return c.SendStatus(fiber.StatusUnprocessableEntity)
@@ -17,7 +18,6 @@ func PostTransaction(c *fiber.Ctx) error {
 	if err != nil {
 		return c.SendStatus(fiber.StatusNotFound)
 	}
-
 	var body = &dto.TransactionRequest{}
 	err = c.BodyParser(body)
 	if err != nil {
@@ -27,16 +27,18 @@ func PostTransaction(c *fiber.Ctx) error {
 	if err != nil {
 		return c.SendStatus(fiber.StatusUnprocessableEntity)
 	}
-
-	resp, err := model.SaveTransaction(id, body)
-	if err != nil {
+	resp, err := model.SaveTransaction(ctx, id, body)
+	if resp.Limit < 0 {
 		return c.SendStatus(fiber.StatusUnprocessableEntity)
 	}
-
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
 	return c.JSON(resp)
 }
 
 func GetStatment(c *fiber.Ctx) error {
+	ctx := c.Context()
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return c.SendStatus(fiber.StatusUnprocessableEntity)
@@ -45,8 +47,7 @@ func GetStatment(c *fiber.Ctx) error {
 	if err != nil {
 		return c.SendStatus(fiber.StatusNotFound)
 	}
-
-	resp, err := model.GetClientBalance(id)
+	resp, err := model.GetClientBalance(ctx, id)
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
@@ -54,11 +55,12 @@ func GetStatment(c *fiber.Ctx) error {
 }
 
 func ResetDB(c *fiber.Ctx) error {
-	_, err := db.PG.Exec(`UPDATE clientes SET saldo = 0`)
+	ctx := c.Context()
+	_, err := db.PG.Exec(ctx, `UPDATE clientes SET saldo = 0`)
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
-	_, err = db.PG.Exec(`TRUNCATE TABLE transacoes`)
+	_, err = db.PG.Exec(ctx, `TRUNCATE TABLE transacoes`)
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}

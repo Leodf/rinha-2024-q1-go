@@ -1,83 +1,72 @@
 package model
 
 import (
-	"fmt"
+	"context"
 	"time"
 
 	"github.com/Leodf/leodf-go/internal/db"
 	"github.com/Leodf/leodf-go/internal/dto"
 )
 
-var (
-	sqlFunction = map[string]string{"d": "debito", "c": "credito"}
+const (
+	transaction string = "SELECT saldo_atual, limite FROM transacao($1, $2, $3, $4)"
+	client      string = "SELECT saldo, limite FROM clientes WHERE id = $1"
+	statment    string = `
+		SELECT valor, tipo, descricao, realizada_em
+		FROM transacoes t
+		WHERE t.cliente_id = $1
+		ORDER BY realizada_em DESC
+		LIMIT 10
+	`
 )
 
-func SaveTransaction(id int, body *dto.TransactionRequest) (*dto.TransactionResponse, error) {
+func SaveTransaction(ctx context.Context, id int, body *dto.TransactionRequest) (*dto.TransactionResponse, error) {
 	var balance int
 	var limit int
-
-	callsqlfunction := fmt.Sprintf("SELECT saldo_atual, limite FROM %s($1, $2, $3)", sqlFunction[body.Type])
-
-	err := db.PG.QueryRow(callsqlfunction, id, body.Value, body.Description).Scan(&balance, &limit)
+	err := db.PG.QueryRow(ctx, transaction, id, body.Value, body.Type, body.Description).Scan(&balance, &limit)
 	if err != nil {
-		if err.Error() == "pq: saldo insuficiente" {
-			return nil, err
-		}
-		fmt.Println(err.Error())
+		return nil, err
 	}
-
 	output := &dto.TransactionResponse{
 		Limit:   limit,
 		Balance: balance,
 	}
-
 	return output, nil
 }
 
-func GetClientBalance(id int) (*dto.StatmentResponse, error) {
-
-	var balance int
-	var limit int
-	date := time.Now()
-
-	err := db.PG.QueryRow("SELECT saldo, limite FROM clientes WHERE id = $1 FOR UPDATE", id).Scan(&balance, &limit)
+func GetClientBalance(ctx context.Context, id int) (*dto.StatmentResponse, error) {
+	var limit, balance int
+	err := db.PG.QueryRow(ctx, client, id).Scan(&balance, &limit)
 	if err != nil {
 		return nil, err
 	}
-	statmentHead := &dto.StatmentHead{
-		Total: balance,
-		Limit: limit,
-		Date:  date,
-	}
-	rows, err := db.PG.Query(`
-		SELECT valor, tipo, descricao, realizada_em 
-		FROM transacoes 
-		WHERE cliente_id = $1 
-		ORDER BY realizada_em DESC 
-		LIMIT 10
-	`, id)
+	rows, err := db.PG.Query(ctx, statment, id)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
-	var lastTransactions []*dto.LastTransactions
+	lastTransactions := make([]*dto.LastTransactions, 0)
 	for rows.Next() {
-		var i dto.LastTransactions
+		var lt dto.LastTransactions
 		if err := rows.Scan(
-			&i.Value,
-			&i.Type,
-			&i.Description,
-			&i.CreatedAt,
+			&lt.Value,
+			&lt.Type,
+			&lt.Description,
+			&lt.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
-		lastTransactions = append(lastTransactions, &i)
+		lastTransactions = append(lastTransactions, &lt)
+	}
+
+	statHead := &dto.StatmentHead{
+		Total: balance,
+		Limit: limit,
+		Date:  time.Now(),
 	}
 	output := &dto.StatmentResponse{
-		StatmentHead:     statmentHead,
+		StatmentHead:     statHead,
 		LastTransactions: lastTransactions,
 	}
 	return output, nil
-
 }
