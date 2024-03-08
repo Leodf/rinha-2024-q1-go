@@ -13,7 +13,7 @@ Submissão feita com:
 - `nginx` como load balancer
 - `postgres` como banco de dados
 - `go lang` para api com as libs `fiber`
-- [repositório da api](https://github.com/Leodf/rinha-de-backend-2024-q1)
+- [repositório da api](https://github.com/Leodf/rinha-2024-q1-go)
 
 ## Autor
 
